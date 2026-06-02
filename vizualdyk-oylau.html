@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Компьютерлік графика арқылы визуалды ойлауды дамыту</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Noto+Sans:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #111827;
+  --bg3: #1a2338;
+  --accent1: #5b9cf6;
+  --accent2: #a78bfa;
+  --accent3: #34d399;
+  --accent4: #fb923c;
+  --accent5: #f472b6;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: rgba(255,255,255,0.08);
+  --glow1: rgba(91,156,246,0.15);
+  --glow2: rgba(167,139,250,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Stars background */
+.stars{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 20% 50%, rgba(91,156,246,0.05) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.05) 0%, transparent 50%);
+}
+.stars::before,.stars::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background-image:
+    radial-gradient(circle,rgba(255,255,255,0.8) 1px,transparent 1px);
+  background-size:60px 60px;
+  opacity:0.15;
+  animation:twinkle 8s ease-in-out infinite;
+}
+.stars::after{background-size:90px 90px;animation-delay:4s;opacity:0.08}
+@keyframes twinkle{0%,100%{opacity:0.15}50%{opacity:0.25}}
+
+/* Layout */
+main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 24px 80px}
+
+/* HERO */
+.hero{
+  text-align:center;padding:80px 20px 60px;
+  position:relative;
+}
+.hero-tag{
+  display:inline-block;
+  font-family:'Unbounded',sans-serif;
+  font-size:10px;font-weight:400;letter-spacing:3px;
+  color:var(--accent3);
+  text-transform:uppercase;
+  border:1px solid rgba(52,211,153,0.3);
+  padding:6px 18px;border-radius:20px;margin-bottom:24px;
+}
+.hero h1{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(22px,4vw,44px);
+  font-weight:800;line-height:1.2;
+  background:linear-gradient(135deg,#fff 0%,var(--accent1) 40%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:16px;
+}
+.hero p{font-size:16px;color:var(--muted);line-height:1.7;max-width:640px;margin:0 auto 40px}
+
+/* Section titles */
+.section-title{
+  font-family:'Unbounded',sans-serif;font-size:22px;font-weight:600;
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;
+}
+.section-title .dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.section-sub{font-size:14px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+section{margin-bottom:72px}
+
+/* ─── TASK CARDS GRID ─── */
+.task-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.task-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:24px;
+  position:relative;overflow:hidden;
+  transition:transform .25s,border-color .25s,box-shadow .25s;
+  cursor:pointer;
+}
+.task-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.4);
+}
+.task-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:16px 16px 0 0;
+}
+.task-card.blue::before{background:linear-gradient(90deg,var(--accent1),var(--accent2))}
+.task-card.blue:hover{border-color:rgba(91,156,246,0.3)}
+.task-card.green::before{background:linear-gradient(90deg,var(--accent3),var(--accent1))}
+.task-card.green:hover{border-color:rgba(52,211,153,0.3)}
+.task-card.orange::before{background:linear-gradient(90deg,var(--accent4),var(--accent5))}
+.task-card.orange:hover{border-color:rgba(251,146,60,0.3)}
+.task-card.purple::before{background:linear-gradient(90deg,var(--accent2),var(--accent5))}
+.task-card.purple:hover{border-color:rgba(167,139,250,0.3)}
+
+.task-icon{font-size:28px;margin-bottom:12px}
+.task-card h3{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:600;margin-bottom:8px}
+.task-card p{font-size:13px;color:var(--muted);line-height:1.6}
+.task-badge{
+  display:inline-block;font-size:10px;
+  padding:3px 10px;border-radius:10px;margin-top:12px;
+  font-family:'Unbounded',sans-serif;letter-spacing:1px;
+}
+.badge-easy{background:rgba(52,211,153,0.15);color:var(--accent3)}
+.badge-mid{background:rgba(251,146,60,0.15);color:var(--accent4)}
+.badge-hard{background:rgba(244,114,182,0.15);color:var(--accent5)}
+
+/* ─── INTERACTIVE PIXEL ART ─── */
+.canvas-wrap{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;padding:32px;
+}
+.canvas-header{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;margin-bottom:24px;
+}
+.canvas-header h3{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:600}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.color-picker-wrap{display:flex;gap:6px;align-items:center}
+.color-swatch{
+  width:26px;height:26px;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;transition:border-color .2s,transform .15s;
+}
+.color-swatch:hover,.color-swatch.active{border-color:#fff;transform:scale(1.15)}
+.btn{
+  font-family:'Unbounded',sans-serif;font-size:10px;letter-spacing:1px;
+  padding:7px 16px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);cursor:pointer;transition:all .2s;
+}
+.btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.2)}
+.btn.primary{background:rgba(91,156,246,0.15);border-color:rgba(91,156,246,0.4);color:var(--accent1)}
+.btn.primary:hover{background:rgba(91,156,246,0.25)}
+#pixel-canvas{
+  display:grid;gap:1px;background:#0d1321;
+  border-radius:8px;border:1px solid var(--border);
+  width:100%;aspect-ratio:1;max-width:480px;margin:0 auto;
+}
+.px-cell{
+  background:#0d1321;cursor:crosshair;
+  transition:background .05s;
+  min-width:0;min-height:0;
+}
+.px-cell:hover{opacity:0.85}
+.tool-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+
+/* ─── COLOR THEORY ─── */
+.color-theory-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;
+}
+.theory-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:24px;
+}
+.theory-card h4{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:600;margin-bottom:16px;color:var(--accent1)}
+.color-wheel-demo{
+  display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;
+}
+.cw-seg{
+  height:40px;flex:1;border-radius:6px;min-width:28px;
+  transition:transform .2s;cursor:pointer;
+}
+.cw-seg:hover{transform:scaleY(1.2);z-index:1}
+.theory-text{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ─── PATTERN RECOGNITION ─── */
+.pattern-area{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:32px;
+}
+.pattern-question{
+  font-size:15px;margin-bottom:20px;line-height:1.6;
+}
+.pattern-options{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;
+  margin-bottom:20px;
+}
+.p-option{
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:16px;text-align:center;cursor:pointer;transition:all .2s;
+  font-size:22px;
+}
+.p-option:hover{border-color:var(--accent1);background:rgba(91,156,246,0.08)}
+.p-option.correct{border-color:var(--accent3);background:rgba(52,211,153,0.12);animation:pulse-green .4s}
+.p-option.wrong{border-color:var(--accent5);background:rgba(244,114,182,0.12);animation:shake .3s}
+@keyframes pulse-green{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+#pattern-feedback{
+  font-size:14px;min-height:22px;transition:opacity .3s;
+  padding:4px 0;
+}
+.score-bar{
+  display:flex;align-items:center;gap:12px;margin-top:16px;
+}
+.score-track{
+  flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;
+}
+.score-fill{
+  height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent1));
+  border-radius:3px;transition:width .4s;
+}
+.score-label{font-size:12px;color:var(--muted);font-family:'Unbounded',sans-serif}
+
+/* ─── SYMMETRY / MIRROR ─── */
+.mirror-wrap{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;
+}
+.mirror-canvases{
+  display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;
+  justify-content:center;
+}
+.mirror-canvases canvas{
+  border-radius:8px;border:1px solid var(--border);cursor:crosshair;
+  background:#0d1321;
+}
+.mirror-label{
+  font-size:11px;color:var(--muted);text-align:center;margin-top:6px;
+  font-family:'Unbounded',sans-serif;letter-spacing:1px;
+}
+.axis-select{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:6px 12px;border-radius:8px;font-size:12px;
+  font-family:'Noto Sans',sans-serif;cursor:pointer;
+}
+
+/* ─── GRADIENT BUILDER ─── */
+.gradient-builder{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;
+}
+.gradient-preview{
+  width:100%;height:80px;border-radius:10px;margin-bottom:20px;
+  border:1px solid var(--border);
+  transition:background .3s;
+}
+.gradient-stops{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stop-item{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;
+}
+.stop-item label{font-size:12px;color:var(--muted)}
+.stop-item input[type=color]{
+  width:28px;height:28px;border:none;border-radius:4px;
+  cursor:pointer;background:none;padding:0;
+}
+.stop-item input[type=range]{width:80px}
+.gradient-code{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:12px;font-family:monospace;font-size:12px;color:var(--accent3);
+  word-break:break-all;
+}
+
+/* ─── ANIMATION TASK ─── */
+.anim-demo{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;
+}
+#anim-stage{
+  width:100%;height:200px;background:#0d1321;border-radius:10px;
+  position:relative;overflow:hidden;margin-bottom:20px;border:1px solid var(--border);
+}
+.anim-object{
+  width:50px;height:50px;border-radius:50%;position:absolute;top:50%;
+  transform:translateY(-50%);
+}
+.anim-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.speed-label{font-size:12px;color:var(--muted)}
+
+/* ─── PROGRESS ─── */
+.progress-section{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;
+}
+.progress-title{font-family:'Unbounded',sans-serif;font-size:14px;margin-bottom:20px}
+.skill-list{display:flex;flex-direction:column;gap:14px}
+.skill-item{display:flex;align-items:center;gap:12px}
+.skill-name{font-size:13px;width:180px;flex-shrink:0;color:var(--muted)}
+.skill-bar{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.skill-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.17,.67,.35,1)}
+.skill-pct{font-size:12px;width:36px;text-align:right;font-family:'Unbounded',sans-serif}
+
+/* ─── THEORY STEPS ─── */
+.steps-row{display:flex;gap:0;flex-wrap:wrap;counter-reset:step}
+.step-item{
+  flex:1;min-width:160px;padding:20px;border:1px solid var(--border);
+  background:var(--bg2);position:relative;
+  counter-increment:step;
+  transition:background .2s;
+}
+.step-item:first-child{border-radius:12px 0 0 12px}
+.step-item:last-child{border-radius:0 12px 12px 0}
+.step-item:hover{background:var(--bg3)}
+.step-item::before{
+  content:counter(step);
+  font-family:'Unbounded',sans-serif;font-size:28px;font-weight:800;
+  color:var(--border);display:block;margin-bottom:8px;
+}
+.step-item h4{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:600;margin-bottom:6px}
+.step-item p{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ─── HERO ANIMATION ─── */
+.floating-shapes{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;overflow:hidden;
+}
+.fshape{
+  position:absolute;border-radius:50%;opacity:0.06;
+  animation:float-shape linear infinite;
+}
+@keyframes float-shape{
+  0%{transform:translateY(100%) rotate(0deg)}
+  100%{transform:translateY(-200%) rotate(360deg)}
+}
+
+/* Responsive */
+@media(max-width:600px){
+  .steps-row{flex-direction:column}
+  .step-item{border-radius:0!important;border-bottom:none}
+  .step-item:last-child{border-radius:12px!important;border-bottom:1px solid var(--border)}
+}
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<main>
+<!-- HERO -->
+<div class="hero">
+  <div class="floating-shapes">
+    <div class="fshape" style="width:200px;height:200px;left:10%;background:var(--accent1);animation-duration:20s;animation-delay:0s"></div>
+    <div class="fshape" style="width:150px;height:150px;left:70%;background:var(--accent2);animation-duration:15s;animation-delay:-5s"></div>
+    <div class="fshape" style="width:100px;height:100px;left:45%;background:var(--accent3);animation-duration:25s;animation-delay:-10s"></div>
+  </div>
+  <div class="hero-tag">Машиналық оқыту · Сурет арқылы оқыту</div>
+  <h1>Компьютерлік графика арқылы<br/>визуалды ойлауды дамыту</h1>
+  <p>Интерактивті тапсырмалар арқылы кеңістіктік ойлауды, түстер теориясын және паттернды тану дағдыларын меңгеріңіз</p>
+</div>
+
+<!-- THEORY STEPS -->
+<section>
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent1)"></span>
+    Визуалды ойлаудың деңгейлері
+  </div>
+  <div class="section-sub">Оқушының даму сатысы — қабылдаудан шығармашылыққа дейін</div>
+  <div class="steps-row">
+    <div class="step-item">
+      <h4>Қабылдау</h4>
+      <p>Суреттегі формалар мен түстерді ажырату, негізгі элементтерді тану</p>
+    </div>
+    <div class="step-item">
+      <h4>Талдау</h4>
+      <p>Паттерндерді, симметрияны және қайталанатын элементтерді анықтау</p>
+    </div>
+    <div class="step-item">
+      <h4>Синтез</h4>
+      <p>Бөліктерді біріктіріп тұтас образ жасау, композиция құру</p>
+    </div>
+    <div class="step-item">
+      <h4>Шығармашылық</h4>
+      <p>Өз идеяларын визуал арқылы жеткізу, жаңа формалар ойлап табу</p>
+    </div>
+  </div>
+</section>
+
+<!-- TASK CARDS -->
+<section>
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent2)"></span>
+    Тапсырмалар жинағы
+  </div>
+  <div class="section-sub">Деңгейге сай интерактивті жаттығулар</div>
+  <div class="task-grid">
+    <div class="task-card blue" onclick="document.getElementById('pixel-section').scrollIntoView({behavior:'smooth'})">
+      <div class="task-icon">🎨</div>
+      <h3>Пиксель өнері</h3>
+      <p>Торкөзде нүктелер арқылы сурет салу. Пикселдік ойлауды және координаттар жүйесін меңгеру.</p>
+      <span class="task-badge badge-easy">Бастауыш</span>
+    </div>
+    <div class="task-card green" onclick="document.getElementById('pattern-section').scrollIntoView({behavior:'smooth'})">
+      <div class="task-icon">🔍</div>
+      <h3>Паттернды тану</h3>
+      <p>Берілген қатарды жалғастыру, кемшін элементті табу. Логикалық-визуалды ойлауды дамыту.</p>
+      <span class="task-badge badge-easy">Бастауыш</span>
+    </div>
+    <div class="task-card orange" onclick="document.getElementById('symmetry-section').scrollIntoView({behavior:'smooth'})">
+      <div class="task-icon">🪞</div>
+      <h3>Симметрия және айна</h3>
+      <p>Сурет салып, оның айнадағы бейнесін бақылау. Кеңістіктік трансформацияларды түсіну.</p>
+      <span class="task-badge badge-mid">Орта</span>
+    </div>
+    <div class="task-card purple" onclick="document.getElementById('gradient-section').scrollIntoView({behavior:'smooth'})">
+      <div class="task-icon">🌈</div>
+      <h3>Градиент жасаушы</h3>
+      <p>Түстер арасындағы өту ережелерін зерттеу. CSS градиент кодын нақты уақытта бақылау.</p>
+      <span class="task-badge badge-mid">Орта</span>
+    </div>
+    <div class="task-card blue" onclick="document.getElementById('anim-section').scrollIntoView({behavior:'smooth'})">
+      <div class="task-icon">✨</div>
+      <h3>Анимация физикасы</h3>
+      <p>Қозғалыс заңдарын визуал арқылы меңгеру: жылдамдық, бағыт, инерция.</p>
+      <span class="task-badge badge-hard">Жоғары</span>
+    </div>
+    <div class="task-card green" onclick="document.getElementById('color-section').scrollIntoView({behavior:'smooth'})">
+      <div class="task-icon">💡</div>
+      <h3>Түстер теориясы</h3>
+      <p>Негізгі, қосымша және толықтырушы түстер. Эмоционалды әсер мен үйлесімділік.</p>
+      <span class="task-badge badge-hard">Жоғары</span>
+    </div>
+  </div>
+</section>
+
+<!-- PIXEL ART -->
+<section id="pixel-section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent1)"></span>
+    🎨 Тапсырма 1: Пиксель өнері
+  </div>
+  <div class="section-sub">Торкөзге шертіп сурет салыңыз. Координаттар жүйесін пайдаланып өз кейіпкеріңізді жасаңыз.</div>
+  <div class="canvas-wrap">
+    <div class="canvas-header">
+      <h3>Пиксель алаңы — 16×16</h3>
+      <div class="controls">
+        <div class="color-picker-wrap" id="swatches"></div>
+        <button class="btn primary" onclick="clearPixels()">🗑 Тазалау</button>
+        <button class="btn" onclick="fillRandom()">🎲 Кездейсоқ</button>
+        <button class="btn" onclick="downloadPixel()">💾 Жүктеу</button>
+      </div>
+    </div>
+    <div id="pixel-canvas"></div>
+    <div class="tool-hint">Шертіп немесе сүйреп сурет салыңыз · Ағымдағы түс жоғарыда белгіленген</div>
+  </div>
+</section>
+
+<!-- PATTERN RECOGNITION -->
+<section id="pattern-section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent3)"></span>
+    🔍 Тапсырма 2: Паттернды тану
+  </div>
+  <div class="section-sub">Берілген қатарды зерттеп, кемшін элементті табыңыз. Логикалық ойлауыңызды тексеріңіз!</div>
+  <div class="pattern-area">
+    <div class="pattern-question" id="pat-question">Жүктелуде...</div>
+    <div class="pattern-options" id="pat-options"></div>
+    <div id="pattern-feedback"></div>
+    <div class="score-bar">
+      <span class="score-label">Ұпай</span>
+      <div class="score-track"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
+      <span class="score-label" id="score-text">0/0</span>
+    </div>
+  </div>
+</section>
+
+<!-- SYMMETRY -->
+<section id="symmetry-section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent4)"></span>
+    🪞 Тапсырма 3: Симметрия жасаушы
+  </div>
+  <div class="section-sub">Сол жақта еркін сурет салыңыз — оң жақта айна бейнесі автоматты жасалады.</div>
+  <div class="mirror-wrap">
+    <div class="controls" style="margin-bottom:20px">
+      <select class="axis-select" id="mirror-axis" onchange="redrawMirror()">
+        <option value="horizontal">↔ Көлденең ось</option>
+        <option value="vertical">↕ Тік ось</option>
+        <option value="both">✦ Екі ось</option>
+      </select>
+      <button class="btn primary" onclick="clearMirror()">🗑 Тазалау</button>
+      <div class="color-picker-wrap" id="mirror-swatches"></div>
+    </div>
+    <div class="mirror-canvases">
+      <div>
+        <canvas id="mirror-draw" width="220" height="220"></canvas>
+        <div class="mirror-label">СУРЕТ САЛЫҢЫЗ</div>
+      </div>
+      <div>
+        <canvas id="mirror-result" width="220" height="220"></canvas>
+        <div class="mirror-label">АЙНА БЕЙНЕСІ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GRADIENT BUILDER -->
+<section id="gradient-section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent2)"></span>
+    🌈 Тапсырма 4: Градиент жасаушы
+  </div>
+  <div class="section-sub">Түстерді таңдап, нақты уақытта градиент жасаңыз. Кодын оқып, CSS тіліне үйреніңіз.</div>
+  <div class="gradient-builder">
+    <div class="gradient-preview" id="grad-preview"></div>
+    <div class="gradient-stops">
+      <div class="stop-item">
+        <label>1-ші түс</label>
+        <input type="color" id="g1" value="#5b9cf6" oninput="updateGradient()"/>
+        <label>%</label>
+        <input type="range" id="g1p" min="0" max="100" value="0" oninput="updateGradient()"/>
+        <span id="g1pv" style="font-size:11px;color:var(--muted);width:28px">0%</span>
+      </div>
+      <div class="stop-item">
+        <label>2-ші түс</label>
+        <input type="color" id="g2" value="#a78bfa" oninput="updateGradient()"/>
+        <label>%</label>
+        <input type="range" id="g2p" min="0" max="100" value="50" oninput="updateGradient()"/>
+        <span id="g2pv" style="font-size:11px;color:var(--muted);width:28px">50%</span>
+      </div>
+      <div class="stop-item">
+        <label>3-ші түс</label>
+        <input type="color" id="g3" value="#34d399" oninput="updateGradient()"/>
+        <label>%</label>
+        <input type="range" id="g3p" min="0" max="100" value="100" oninput="updateGradient()"/>
+        <span id="g3pv" style="font-size:11px;color:var(--muted);width:28px">100%</span>
+      </div>
+    </div>
+    <div class="controls" style="margin-bottom:16px;gap:8px">
+      <select class="axis-select" id="grad-dir" onchange="updateGradient()">
+        <option value="90deg">→ Оңға</option>
+        <option value="135deg">↘ Диагональ</option>
+        <option value="180deg">↓ Төмен</option>
+        <option value="45deg">↗ Жоғарыға</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'Unbounded',sans-serif;letter-spacing:1px">CSS КОД:</div>
+      <div class="gradient-code" id="grad-code"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ANIMATION -->
+<section id="anim-section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent5)"></span>
+    ✨ Тапсырма 5: Анимация физикасы
+  </div>
+  <div class="section-sub">Қозғалысты басқарыңыз. Жылдамдықты, бағытты және серпімділікті реттеп, физика заңдарын зерттеңіз.</div>
+  <div class="anim-demo">
+    <div id="anim-stage">
+      <div class="anim-object" id="anim-ball" style="background:radial-gradient(circle at 35% 35%,#7dd3fc,#1d4ed8);left:10px"></div>
+    </div>
+    <div class="anim-controls">
+      <button class="btn primary" id="anim-btn" onclick="toggleAnim()">▶ Іске қосу</button>
+      <span class="speed-label">Жылдамдық:</span>
+      <input type="range" min="1" max="10" value="3" id="anim-speed" style="width:100px"/>
+      <span id="anim-speed-v" style="font-size:12px;color:var(--muted)">3×</span>
+      <span class="speed-label">Серпімділік:</span>
+      <input type="range" min="1" max="10" value="7" id="anim-bounce" style="width:100px"/>
+      <span id="anim-bounce-v" style="font-size:12px;color:var(--muted)">7</span>
+      <select class="axis-select" id="anim-shape" onchange="changeShape()">
+        <option value="circle">⬤ Шеңбер</option>
+        <option value="square">■ Шаршы</option>
+        <option value="triangle">▲ Үшбұрыш</option>
+      </select>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.7">
+      💡 <strong style="color:var(--text)">Байқаңыз:</strong> Жылдамдық артқанда ауытқу аралығы қысқарады. Серпімділік — доптың қалпына келу күші. Бұл физикалық қасиеттерді визуал арқылы түсіну оңайырақ.
+    </div>
+  </div>
+</section>
+
+<!-- COLOR THEORY -->
+<section id="color-section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent4)"></span>
+    💡 Тапсырма 6: Түстер теориясы
+  </div>
+  <div class="section-sub">Түс дөңгелегімен танысыңыз. Үйлесімді комбинациялар мен эмоционалды мағынасын зерттеңіз.</div>
+  <div class="color-theory-grid">
+    <div class="theory-card">
+      <h4>Негізгі түстер</h4>
+      <div class="color-wheel-demo">
+        <div class="cw-seg" style="background:#e74c3c" title="Қызыл" onclick="showColorInfo('Қызыл — күш, энергия, алаңдаушылық')"></div>
+        <div class="cw-seg" style="background:#f39c12" title="Сары" onclick="showColorInfo('Сары — қуаныш, шығармашылық, назар аудару')"></div>
+        <div class="cw-seg" style="background:#3498db" title="Көк" onclick="showColorInfo('Көк — тыныштық, сенімділік, тереңдік')"></div>
+      </div>
+      <p class="theory-text">Барлық түстер осы үшеуінен жасалады. Шертіп эмоционалды мағынасын біліңіз.</p>
+    </div>
+    <div class="theory-card">
+      <h4>Қосымша түстер</h4>
+      <div class="color-wheel-demo">
+        <div class="cw-seg" style="background:#e67e22" onclick="showColorInfo('Қызғылт сары — жылылық, достық, белсенділік')"></div>
+        <div class="cw-seg" style="background:#2ecc71" onclick="showColorInfo('Жасыл — табиғат, тыныштық, өсу')"></div>
+        <div class="cw-seg" style="background:#9b59b6" onclick="showColorInfo('Күлгін — сырлылық, шығармашылық, асыл')"></div>
+      </div>
+      <p class="theory-text">Екі негізгі түсті araластырғанда пайда болады. Табиғатта жиі кездеседі.</p>
+    </div>
+    <div class="theory-card">
+      <h4>Толықтырушы жұптар</h4>
+      <div class="color-wheel-demo">
+        <div class="cw-seg" style="background:#e74c3c"></div>
+        <div class="cw-seg" style="background:#2ecc71"></div>
+      </div>
+      <div class="color-wheel-demo">
+        <div class="cw-seg" style="background:#3498db"></div>
+        <div class="cw-seg" style="background:#f39c12"></div>
+      </div>
+      <p class="theory-text">Дөңгелектің қарама-қарсы жағындағы түстер. Бірге тұрғанда айқын контраст береді.</p>
+    </div>
+  </div>
+  <div id="color-info" style="margin-top:16px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;font-size:14px;color:var(--accent3);min-height:48px;transition:all .3s;display:none"></div>
+</section>
+
+<!-- PROGRESS TRACKER -->
+<section>
+  <div class="section-title">
+    <span class="dot" style="background:var(--accent3)"></span>
+    Дағдылар картасы
+  </div>
+  <div class="section-sub">Осы модульді аяқтағаннан кейін меңгерілетін қабілеттер</div>
+  <div class="progress-section">
+    <div class="progress-title">Визуалды ойлау дағдылары</div>
+    <div class="skill-list">
+      <div class="skill-item">
+        <span class="skill-name">Кеңістіктік ойлау</span>
+        <div class="skill-bar"><div class="skill-fill" style="width:0%;background:linear-gradient(90deg,var(--accent1),var(--accent2))" data-target="85"></div></div>
+        <span class="skill-pct" style="color:var(--accent1)">85%</span>
+      </div>
+      <div class="skill-item">
+        <span class="skill-name">Паттернды тану</span>
+        <div class="skill-bar"><div class="skill-fill" style="width:0%;background:linear-gradient(90deg,var(--accent3),var(--accent1))" data-target="78"></div></div>
+        <span class="skill-pct" style="color:var(--accent3)">78%</span>
+      </div>
+      <div class="skill-item">
+        <span class="skill-name">Түстер сезімі</span>
+        <div class="skill-bar"><div class="skill-fill" style="width:0%;background:linear-gradient(90deg,var(--accent4),var(--accent5))" data-target="70"></div></div>
+        <span class="skill-pct" style="color:var(--accent4)">70%</span>
+      </div>
+      <div class="skill-item">
+        <span class="skill-name">Анимация логикасы</span>
+        <div class="skill-bar"><div class="skill-fill" style="width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent5))" data-target="65"></div></div>
+        <span class="skill-pct" style="color:var(--accent2)">65%</span>
+      </div>
+      <div class="skill-item">
+        <span class="skill-name">Симметрия ойлауы</span>
+        <div class="skill-bar"><div class="skill-fill" style="width:0%;background:linear-gradient(90deg,var(--accent3),var(--accent2))" data-target="80"></div></div>
+        <span class="skill-pct" style="color:var(--accent3)">80%</span>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+// ─── PIXEL ART ───────────────────────────────────────────────
+const GRID=16;
+const PALETTE=['#5b9cf6','#a78bfa','#34d399','#fb923c','#f472b6','#fbbf24','#e2e8f0','#0d1321','#ef4444','#10b981'];
+let currentColor='#5b9cf6';
+let isDrawing=false;
+let pixelData=new Array(GRID*GRID).fill('#0d1321');
+
+function buildPixelGrid(){
+  const c=document.getElementById('pixel-canvas');
+  c.style.gridTemplateColumns=`repeat(${GRID},1fr)`;
+  c.innerHTML='';
+  for(let i=0;i<GRID*GRID;i++){
+    const cell=document.createElement('div');
+    cell.className='px-cell';
+    cell.dataset.i=i;
+    cell.style.background=pixelData[i];
+    cell.addEventListener('mousedown',e=>{isDrawing=true;paintCell(i)});
+    cell.addEventListener('mouseover',e=>{if(isDrawing)paintCell(i)});
+    cell.addEventListener('touchstart',e=>{e.preventDefault();isDrawing=true;paintCell(i)},{passive:false});
+    cell.addEventListener('touchmove',e=>{
+      e.preventDefault();
+      const t=e.touches[0];
+      const el=document.elementFromPoint(t.clientX,t.clientY);
+      if(el&&el.dataset.i!==undefined)paintCell(+el.dataset.i);
+    },{passive:false});
+    c.appendChild(cell);
+  }
+  document.addEventListener('mouseup',()=>isDrawing=false);
+}
+
+function paintCell(i){
+  pixelData[i]=currentColor;
+  document.querySelectorAll('.px-cell')[i].style.background=currentColor;
+}
+
+function buildSwatches(containerId,onPick){
+  const wrap=document.getElementById(containerId);
+  wrap.innerHTML='';
+  PALETTE.forEach((c,idx)=>{
+    const s=document.createElement('div');
+    s.className='color-swatch'+(idx===0?' active':'');
+    s.style.background=c;
+    s.onclick=()=>{
+      wrap.querySelectorAll('.color-swatch').forEach(x=>x.classList.remove('active'));
+      s.classList.add('active');
+      onPick(c);
+    };
+    wrap.appendChild(s);
+  });
+}
+
+buildSwatches('swatches',c=>currentColor=c);
+buildPixelGrid();
+
+function clearPixels(){pixelData.fill('#0d1321');buildPixelGrid()}
+
+function fillRandom(){
+  pixelData=pixelData.map(()=>Math.random()<0.3?PALETTE[Math.floor(Math.random()*PALETTE.length)]:'#0d1321');
+  buildPixelGrid();
+}
+
+function downloadPixel(){
+  const sc=document.createElement('canvas');sc.width=GRID*10;sc.height=GRID*10;
+  const ctx=sc.getContext('2d');
+  pixelData.forEach((c,i)=>{
+    const x=(i%GRID)*10,y=Math.floor(i/GRID)*10;
+    ctx.fillStyle=c;ctx.fillRect(x,y,10,10);
+  });
+  const a=document.createElement('a');a.href=sc.toDataURL();a.download='pixel-art.png';a.click();
+}
+
+// ─── PATTERN RECOGNITION ─────────────────────────────────────
+const patterns=[
+  {seq:['🔴','🔵','🔴','🔵','?'],answer:'🔴',options:['🔴','🟢','🟡','🟣'],hint:'Қызыл–көк кезектесуі'},
+  {seq:['🌟','🌟','⭐','🌟','🌟','?'],answer:'⭐',options:['🌟','⭐','🌙','☀️'],hint:'2 жұлдыз, 1 шағын жұлдыз қайталанады'},
+  {seq:['🟥','🟧','🟨','🟩','?'],answer:'🟦',options:['🟦','🟪','🟥','🟧'],hint:'Кемпірқосақ реті'},
+  {seq:['1️⃣','2️⃣','4️⃣','8️⃣','?'],answer:'🔢',options:['🔢','1️⃣6️⃣','🔟','1️⃣'],hint:'Екіге көбейту қатары'},
+  {seq:['🔺','🔺','🔻','🔺','🔺','?'],answer:'🔻',options:['🔺','🔻','🔷','🔶'],hint:'2 үлкен, 1 кіші үшбұрыш'},
+  {seq:['🌕','🌖','🌗','🌘','?'],answer:'🌑',options:['🌑','🌒','🌓','🌕'],hint:'Ай фазалары кему реттілігімен'},
+];
+const OVERRIDE_ANSWERS=['🔢','1️⃣6️⃣'];
+let patScore=0,patTotal=0,patIdx=0;
+
+function renderPattern(){
+  const p=patterns[patIdx%patterns.length];
+  const seqStr=p.seq.join(' → ');
+  document.getElementById('pat-question').innerHTML=
+    `<strong>Қатарды жалғастырыңыз:</strong><br><span style="font-size:24px;letter-spacing:4px">${seqStr}</span>`;
+  const opts=document.getElementById('pat-options');
+  opts.innerHTML='';
+  [...p.options].sort(()=>Math.random()-.5).forEach(o=>{
+    const btn=document.createElement('div');
+    btn.className='p-option';btn.textContent=o;
+    btn.onclick=()=>checkPattern(btn,o,p.answer,p.hint);
+    opts.appendChild(btn);
+  });
+  document.getElementById('pattern-feedback').textContent='';
+}
+
+function checkPattern(btn,chosen,answer,hint){
+  patTotal++;
+  const fb=document.getElementById('pattern-feedback');
+  if(chosen===answer||answer==='🔢'&&chosen==='1️⃣6️⃣'){
+    patScore++;
+    btn.classList.add('correct');
+    fb.style.color='var(--accent3)';
+    fb.textContent='✓ Дұрыс! '+hint;
+    setTimeout(()=>{patIdx++;renderPattern()},1200);
+  } else {
+    btn.classList.add('wrong');
+    fb.style.color='var(--accent5)';
+    fb.textContent='✗ Қате. Жауап: '+answer+' — '+hint;
+    document.querySelectorAll('.p-option').forEach(b=>b.style.pointerEvents='none');
+    setTimeout(()=>{
+      document.querySelectorAll('.p-option').forEach(b=>b.style.pointerEvents='');
+      patIdx++;renderPattern();
+    },1800);
+  }
+  const pct=Math.round((patScore/patTotal)*100);
+  document.getElementById('score-fill').style.width=pct+'%';
+  document.getElementById('score-text').textContent=patScore+'/'+patTotal;
+}
+renderPattern();
+
+// ─── MIRROR / SYMMETRY ───────────────────────────────────────
+const mDraw=document.getElementById('mirror-draw');
+const mResult=document.getElementById('mirror-result');
+const mCtx=mDraw.getContext('2d');
+const mRCtx=mResult.getContext('2d');
+let mirrorColor='#5b9cf6';
+let isMirrorDrawing=false;
+let lastMX=null,lastMY=null;
+
+buildSwatches('mirror-swatches',c=>mirrorColor=c);
+
+function clearMirror(){
+  mCtx.clearRect(0,0,220,220);
+  mRCtx.clearRect(0,0,220,220);
+}
+
+function drawMirrorPoint(x,y,lastX,lastY){
+  const axis=document.getElementById('mirror-axis').value;
+  mCtx.strokeStyle=mirrorColor;mCtx.lineWidth=3;mCtx.lineCap='round';
+  mCtx.beginPath();mCtx.moveTo(lastX,lastY);mCtx.lineTo(x,y);mCtx.stroke();
+  redrawMirror();
+}
+
+function redrawMirror(){
+  const axis=document.getElementById('mirror-axis').value;
+  mRCtx.clearRect(0,0,220,220);
+  mRCtx.save();
+  if(axis==='horizontal'){
+    mRCtx.translate(220,0);mRCtx.scale(-1,1);
+  } else if(axis==='vertical'){
+    mRCtx.translate(0,220);mRCtx.scale(1,-1);
+  } else {
+    mRCtx.translate(220,220);mRCtx.scale(-1,-1);
+  }
+  mRCtx.drawImage(mDraw,0,0);
+  mRCtx.restore();
+}
+
+function getMirrorPos(e,canvas){
+  const r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width,sy=canvas.height/r.height;
+  if(e.touches){
+    return{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy};
+  }
+  return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
+}
+
+mDraw.addEventListener('mousedown',e=>{isMirrorDrawing=true;const p=getMirrorPos(e,mDraw);lastMX=p.x;lastMY=p.y});
+mDraw.addEventListener('mousemove',e=>{
+  if(!isMirrorDrawing)return;
+  const p=getMirrorPos(e,mDraw);
+  drawMirrorPoint(p.x,p.y,lastMX,lastMY);
+  lastMX=p.x;lastMY=p.y;
+});
+mDraw.addEventListener('mouseup',()=>{isMirrorDrawing=false});
+mDraw.addEventListener('mouseleave',()=>{isMirrorDrawing=false});
+mDraw.addEventListener('touchstart',e=>{e.preventDefault();isMirrorDrawing=true;const p=getMirrorPos(e,mDraw);lastMX=p.x;lastMY=p.y},{passive:false});
+mDraw.addEventListener('touchmove',e=>{e.preventDefault();if(!isMirrorDrawing)return;const p=getMirrorPos(e,mDraw);drawMirrorPoint(p.x,p.y,lastMX,lastMY);lastMX=p.x;lastMY=p.y},{passive:false});
+mDraw.addEventListener('touchend',()=>{isMirrorDrawing=false});
+
+// ─── GRADIENT BUILDER ────────────────────────────────────────
+function updateGradient(){
+  const c1=document.getElementById('g1').value;
+  const c2=document.getElementById('g2').value;
+  const c3=document.getElementById('g3').value;
+  const p1=document.getElementById('g1p').value;
+  const p2=document.getElementById('g2p').value;
+  const p3=document.getElementById('g3p').value;
+  const dir=document.getElementById('grad-dir').value;
+  document.getElementById('g1pv').textContent=p1+'%';
+  document.getElementById('g2pv').textContent=p2+'%';
+  document.getElementById('g3pv').textContent=p3+'%';
+  const css=`linear-gradient(${dir}, ${c1} ${p1}%, ${c2} ${p2}%, ${c3} ${p3}%)`;
+  document.getElementById('grad-preview').style.background=css;
+  document.getElementById('grad-code').textContent=`background: ${css};`;
+}
+updateGradient();
+
+// ─── ANIMATION ───────────────────────────────────────────────
+let animRunning=false;
+let animFrame=null;
+let ballX=10,ballVX=3,ballY=0,ballVY=0;
+const ball=document.getElementById('anim-ball');
+const stage=document.getElementById('anim-stage');
+
+document.getElementById('anim-speed').addEventListener('input',function(){
+  document.getElementById('anim-speed-v').textContent=this.value+'×';
+});
+document.getElementById('anim-bounce').addEventListener('input',function(){
+  document.getElementById('anim-bounce-v').textContent=this.value;
+});
+
+function animStep(){
+  if(!animRunning)return;
+  const spd=+document.getElementById('anim-speed').value;
+  const bnc=+document.getElementById('anim-bounce').value/10;
+  const stageW=stage.offsetWidth-50;
+  const stageH=stage.offsetHeight-50;
+
+  ballVY+=0.4; // gravity
+  ballX+=ballVX*spd*0.5;
+  ballY+=ballVY*spd*0.3;
+
+  if(ballX>=stageW){ballX=stageW;ballVX=-Math.abs(ballVX)*bnc}
+  if(ballX<=0){ballX=0;ballVX=Math.abs(ballVX)*bnc}
+  if(ballY>=stageH){ballY=stageH;ballVY=-Math.abs(ballVY)*bnc;if(Math.abs(ballVY)<0.5)ballVY=0}
+  if(ballY<0){ballY=0;ballVY=Math.abs(ballVY)*bnc}
+
+  ball.style.left=ballX+'px';
+  ball.style.top=(50+ballY)+'px';
+  animFrame=requestAnimationFrame(animStep);
+}
+
+function toggleAnim(){
+  animRunning=!animRunning;
+  document.getElementById('anim-btn').textContent=animRunning?'⏸ Тоқтату':'▶ Іске қосу';
+  if(animRunning){ballVX=3;ballVY=-5;animStep();}
+  else cancelAnimationFrame(animFrame);
+}
+
+function changeShape(){
+  const sh=document.getElementById('anim-shape').value;
+  if(sh==='circle')ball.style.borderRadius='50%';
+  else if(sh==='square')ball.style.borderRadius='4px';
+  else{ball.style.borderRadius='0';ball.style.clipPath='polygon(50% 0%,0% 100%,100% 100%)';}
+}
+
+// ─── COLOR INFO ───────────────────────────────────────────────
+function showColorInfo(msg){
+  const el=document.getElementById('color-info');
+  el.textContent='💬 '+msg;
+  el.style.display='block';
+}
+
+// ─── PROGRESS BARS ANIMATE ───────────────────────────────────
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.querySelectorAll('.skill-fill').forEach(bar=>{
+        bar.style.width=bar.dataset.target+'%';
+      });
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.progress-section').forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>
